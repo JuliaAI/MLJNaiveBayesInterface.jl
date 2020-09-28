@@ -1,0 +1,4 @@
+name = "MLJNaiveBayesInterface"
+uuid = "33e4bacb-b9e2-458e-9a13-5d9a90b235fa"
+authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
+version = "0.1.0"
