@@ -2,3 +2,17 @@ name = "MLJNaiveBayesInterface"
 uuid = "33e4bacb-b9e2-458e-9a13-5d9a90b235fa"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
+NaiveBayes = "9bbee03b-0db5-5f46-924f-b5c9c21b8c60"
+
+[compat]
+MLJModelInterface = "^0.3.5"
+NaiveBayes = "^0.4"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
