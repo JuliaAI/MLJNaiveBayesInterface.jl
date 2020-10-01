@@ -102,6 +102,6 @@ fitresultMLT, cacheMLT, reportMLT =
 yhat = MLJBase.predict(multinomial_classifier, fitresultMLT, Xnew)
 
 # see issue https://github.com/dfdx/NaiveBayes.jl/issues/42
-@test_broken pdf(yhand[1], :m) ≈ pdf(yhat[1], :m)
-@test_broken pdf(yhand[1], :f) ≈ pdf(yhat[1], :f)
+@test pdf(yhand[1], :m) ≈ pdf(yhat[1], :m)
+@test pdf(yhand[1], :f) ≈ pdf(yhat[1], :f)
 
