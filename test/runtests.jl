@@ -59,7 +59,7 @@ green = [0, 2, 0, 6, 1]
 X = (red=red, blue=blue, green=green)
 
 # gender of author:
-y = categorical([:m, :f, :m, :f, :m])
+y = categorical(['m', 'f', 'm', 'f', 'm'])
 male = y[1]
 female = y[2]
 
@@ -100,6 +100,5 @@ fitresultMLT, cacheMLT, reportMLT =
 yhat = MLJBase.predict(multinomial_classifier, fitresultMLT, Xnew)
 
 # see issue https://github.com/dfdx/NaiveBayes.jl/issues/42
-@test pdf(yhand[1], :m) ≈ pdf(yhat[1], :m)
-@test pdf(yhand[1], :f) ≈ pdf(yhat[1], :f)
-
+@test pdf(yhand[1], 'm') ≈ pdf(yhat[1], 'm')
+@test pdf(yhand[1], 'f') ≈ pdf(yhat[1], 'f')
