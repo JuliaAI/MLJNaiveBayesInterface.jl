@@ -9,7 +9,6 @@ rng = StableRNGs.StableRNG(1234)
 ## GAUSSIAN
 
 gaussian_classifier = GaussianNBClassifier()
-info_dict(gaussian_classifier)
 
 # gaussian classifier takes continuous features
 X, y = @load_iris
@@ -94,7 +93,6 @@ yhand =[MLJBase.UnivariateFinite([male, female], [m(1, 1, 1), f(1, 1, 1)]),
         MLJBase.UnivariateFinite([male, female], [m(1, 2, 3), f(1, 2, 3)])]
 
 multinomial_classifier = MultinomialNBClassifier()
-info_dict(multinomial_classifier)
 
 fitresultMLT, cacheMLT, reportMLT =
     MLJBase.fit(multinomial_classifier, 1, X, y)
