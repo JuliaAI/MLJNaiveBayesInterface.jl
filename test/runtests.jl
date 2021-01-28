@@ -9,7 +9,6 @@ rng = StableRNGs.StableRNG(1234)
 ## GAUSSIAN
 
 gaussian_classifier = GaussianNBClassifier()
-info_dict(gaussian_classifier)
 
 # gaussian classifier takes continuous features
 X, y = @load_iris
@@ -60,7 +59,7 @@ green = [0, 2, 0, 6, 1]
 X = (red=red, blue=blue, green=green)
 
 # gender of author:
-y = categorical([:m, :f, :m, :f, :m])
+y = categorical(['m', 'f', 'm', 'f', 'm'])
 male = y[1]
 female = y[2]
 
@@ -94,7 +93,6 @@ yhand =[MLJBase.UnivariateFinite([male, female], [m(1, 1, 1), f(1, 1, 1)]),
         MLJBase.UnivariateFinite([male, female], [m(1, 2, 3), f(1, 2, 3)])]
 
 multinomial_classifier = MultinomialNBClassifier()
-info_dict(multinomial_classifier)
 
 fitresultMLT, cacheMLT, reportMLT =
     MLJBase.fit(multinomial_classifier, 1, X, y)
@@ -102,6 +100,5 @@ fitresultMLT, cacheMLT, reportMLT =
 yhat = MLJBase.predict(multinomial_classifier, fitresultMLT, Xnew)
 
 # see issue https://github.com/dfdx/NaiveBayes.jl/issues/42
-@test pdf(yhand[1], :m) ≈ pdf(yhat[1], :m)
-@test pdf(yhand[1], :f) ≈ pdf(yhat[1], :f)
-
+@test pdf(yhand[1], 'm') ≈ pdf(yhat[1], 'm')
+@test pdf(yhand[1], 'f') ≈ pdf(yhat[1], 'f')
