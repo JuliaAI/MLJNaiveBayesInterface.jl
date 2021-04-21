@@ -8,7 +8,7 @@ MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 NaiveBayes = "9bbee03b-0db5-5f46-924f-b5c9c21b8c60"
 
 [compat]
-MLJModelInterface = "^0.3.5,^0.4"
+MLJModelInterface = "0.3.5, 0.4, 1"
 NaiveBayes = "^0.5.0"
 julia = "^1.3"
 
