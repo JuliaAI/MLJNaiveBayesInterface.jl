@@ -37,12 +37,11 @@ function MMI.fit(model::GaussianNBClassifier, verbosity::Int
 
 end
 
-function MMI.fitted_params(model::GaussianNBClassifier, fitresult)
-    res = fitresult[1]
-    return (c_counts=res.c_counts,
-            c_stats=res.c_stats,
-            gaussians=res.gaussians,
-            n_obs=res.n_obs)
+function MMI.fitted_params(::GaussianNBClassifier, fitresult)
+    return (c_counts=fitresult.c_counts,
+            c_stats=fitresult.c_stats,
+            gaussians=fitresult.gaussians,
+            n_obs=fitresult.n_obs)
 end
 
 function MMI.predict(model::GaussianNBClassifier, fitresult, Xnew)
@@ -92,12 +91,11 @@ function MMI.fit(model::MultinomialNBClassifier, verbosity::Int
     return fitresult, nothing, report
 end
 
-function MMI.fitted_params(model::MultinomialNBClassifier, fitresult)
-    res = fitresult[1]
-    return (c_counts=res.c_counts,
-            x_counts=res.x_counts,
-            x_totals=res.x_totals,
-            n_obs=res.n_obs)
+function MMI.fitted_params(::MultinomialNBClassifier, fitresult)
+    return (c_counts=fitresult.c_counts,
+            x_counts=fitresult.x_counts,
+            x_totals=fitresult.x_totals,
+            n_obs=fitresult.n_obs)
 end
 
 function MMI.predict(model::MultinomialNBClassifier, fitresult, Xnew)
