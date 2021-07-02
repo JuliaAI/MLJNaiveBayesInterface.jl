@@ -2,6 +2,7 @@ module MLJNaiveBayesInterface
 
 export GaussianNBClassifier, MultinomialNBClassifier, HybridNBClassifier
 
+import LogExpFunctions
 import MLJModelInterface
 import NaiveBayes
 import MLJModelInterface: Table, Continuous, Count, Finite, OrderedFactor,
@@ -49,9 +50,9 @@ function MMI.predict(model::GaussianNBClassifier, fitresult, Xnew)
     classes_observed, logprobs = NaiveBayes.predict_logprobs(fitresult, convert(Matrix{Float64}, Xmatrix))
     # Note that NaiveBayes does not normalize the probabilities.
 
-    probs = exp.(logprobs)
-    col_sums = sum(probs, dims=1)
-    probs = probs ./ col_sums
+    for p in (view(logprobs, :, i) for i in axes(logprobs, 2))
+        LogExpFunctions.softmax!(p, p)
+    end
 
     # UnivariateFinite constructor automatically adds unobserved
     # classes with zero probability. Note we need to use adjoint here:
@@ -104,9 +105,9 @@ function MMI.predict(model::MultinomialNBClassifier, fitresult, Xnew)
     classes_observed, logprobs =
         NaiveBayes.predict_logprobs(fitresult, convert(Matrix{Int}, Xmatrix))
 
-    probs = exp.(logprobs)
-    col_sums = sum(probs, dims=1)
-    probs = probs ./ col_sums
+    for p in (view(logprobs, :, i) for i in axes(logprobs, 2))
+        LogExpFunctions.softmax!(p, p)
+    end
 
     return MMI.UnivariateFinite(collect(classes_observed), probs')
 end
