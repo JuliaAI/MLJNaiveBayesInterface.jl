@@ -2,6 +2,7 @@ module MLJNaiveBayesInterface
 
 export GaussianNBClassifier, MultinomialNBClassifier, HybridNBClassifier
 
+import LogExpFunctions
 import MLJModelInterface
 import NaiveBayes
 import MLJModelInterface: Table, Continuous, Count, Finite, OrderedFactor,
@@ -19,17 +20,16 @@ end
 function MMI.fit(model::GaussianNBClassifier, verbosity::Int
                 , X
                 , y)
-
-    Xmatrix = MMI.matrix(X)' |> collect
+    Xmatrix = MMI.matrix(X) |> permutedims
     p = size(Xmatrix, 1)
 
-    yplain = Any[y...] # y as Vector
+    yplain = convert(Vector, y) # y as Vector
     classes_seen = unique(yplain)
 
     # initiates dictionaries keyed on classes_seen:
     res = NaiveBayes.GaussianNB(classes_seen, p)
 
-    fitresult = NaiveBayes.fit(res, Xmatrix, yplain)
+    fitresult = NaiveBayes.fit(res, convert(Matrix{Float64}, Xmatrix), yplain)
 
     report = NamedTuple{}()
 
@@ -37,30 +37,28 @@ function MMI.fit(model::GaussianNBClassifier, verbosity::Int
 
 end
 
-function MMI.fitted_params(model::GaussianNBClassifier, fitresult)
-    res = fitresult[1]
-    return (c_counts=res.c_counts,
-            c_stats=res.c_stats,
-            gaussians=res.gaussians,
-            n_obs=res.n_obs)
+function MMI.fitted_params(::GaussianNBClassifier, fitresult)
+    return (c_counts=fitresult.c_counts,
+            c_stats=fitresult.c_stats,
+            gaussians=fitresult.gaussians,
+            n_obs=fitresult.n_obs)
 end
 
 function MMI.predict(model::GaussianNBClassifier, fitresult, Xnew)
+    Xmatrix = MMI.matrix(Xnew) |> permutedims
 
-    Xmatrix = MMI.matrix(Xnew)' |> collect
-    n = size(Xmatrix, 2)
-
-    classes_observed, logprobs = NaiveBayes.predict_logprobs(fitresult, Xmatrix)
+    classes_observed, logprobs = NaiveBayes.predict_logprobs(fitresult, convert(Matrix{Float64}, Xmatrix))
     # Note that NaiveBayes does not normalize the probabilities.
 
-    probs = exp.(logprobs)
-    col_sums = sum(probs, dims=1)
-    probs = probs ./ col_sums
+    # Normalize probabilities
+    for p in (view(logprobs, :, i) for i in axes(logprobs, 2))
+        LogExpFunctions.softmax!(p, p)
+    end
+    probs = logprobs
 
     # UnivariateFinite constructor automatically adds unobserved
     # classes with zero probability. Note we need to use adjoint here:
-    return MMI.UnivariateFinite([classes_observed...], probs')
-
+    return MMI.UnivariateFinite(collect(classes_observed), probs')
 end
 
 
@@ -81,41 +79,41 @@ function MMI.fit(model::MultinomialNBClassifier, verbosity::Int
 
     Xmatrix = MMI.matrix(X) |> permutedims
     p = size(Xmatrix, 1)
-    yplain = Any[y...] # ordinary Vector
+
+    yplain = convert(Vector, y) # ordinary Vector
     classes_observed = unique(yplain)
 
     res = NaiveBayes.MultinomialNB(classes_observed, p ,alpha= model.alpha)
-    fitresult = NaiveBayes.fit(res, Xmatrix, yplain)
+    fitresult = NaiveBayes.fit(res, convert(Matrix{Int}, Xmatrix), yplain)
 
     report = NamedTuple()
 
     return fitresult, nothing, report
 end
 
-function MMI.fitted_params(model::MultinomialNBClassifier, fitresult)
-    res = fitresult[1]
-    return (c_counts=res.c_counts,
-            x_counts=res.x_counts,
-            x_totals=res.x_totals,
-            n_obs=res.n_obs)
+function MMI.fitted_params(::MultinomialNBClassifier, fitresult)
+    return (c_counts=fitresult.c_counts,
+            x_counts=fitresult.x_counts,
+            x_totals=fitresult.x_totals,
+            n_obs=fitresult.n_obs)
 end
 
 function MMI.predict(model::MultinomialNBClassifier, fitresult, Xnew)
-
-    Xmatrix = MMI.matrix(Xnew) |> collect |> permutedims
-    n = size(Xmatrix, 2)
+    Xmatrix = MMI.matrix(Xnew) |> permutedims
 
     # Note that NaiveBayes.predict_logprobs returns probabilities that
     # are not normalized.
 
     classes_observed, logprobs =
-        NaiveBayes.predict_logprobs(fitresult, Int.(Xmatrix))
+        NaiveBayes.predict_logprobs(fitresult, convert(Matrix{Int}, Xmatrix))
 
-    probs = exp.(logprobs)
-    col_sums = sum(probs, dims=1)
-    probs = probs ./ col_sums
+    # Normalize probabilities
+    for p in (view(logprobs, :, i) for i in axes(logprobs, 2))
+        LogExpFunctions.softmax!(p, p)
+    end
+    probs = logprobs
 
-    return MMI.UnivariateFinite([classes_observed...], probs')
+    return MMI.UnivariateFinite(collect(classes_observed), probs')
 end
 
 

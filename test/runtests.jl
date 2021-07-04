@@ -18,6 +18,9 @@ train, test = partition(eachindex(y), 0.6)
 fitresultG, cacheG, reportG = fit(gaussian_classifier, 1,
                     selectrows(X, train), y[train]);
 
+params = fitted_params(gaussian_classifier, fitresultG)
+@test params.n_obs == length(train)
+
 gaussian_pred = predict(gaussian_classifier,
                         fitresultG,
                         selectrows(X, test));
@@ -41,6 +44,9 @@ gaussian_classifier = GaussianNBClassifier()
 
 fitresultG, cacheG, reportG = MLJBase.fit(gaussian_classifier, 1,
              selectrows(X, train), y[train])
+
+params = fitted_params(gaussian_classifier, fitresultG)
+@test params.n_obs == length(train)
 
 gaussian_pred = MLJBase.predict_mode(gaussian_classifier,
                                      fitresultG, selectrows(X, test))
@@ -96,6 +102,9 @@ multinomial_classifier = MultinomialNBClassifier()
 
 fitresultMLT, cacheMLT, reportMLT =
     MLJBase.fit(multinomial_classifier, 1, X, y)
+
+params = fitted_params(multinomial_classifier, fitresultMLT)
+@test params.n_obs == length(y) + 3 * 2 # 3 features, 2 classes
 
 yhat = MLJBase.predict(multinomial_classifier, fitresultMLT, Xnew)
 
