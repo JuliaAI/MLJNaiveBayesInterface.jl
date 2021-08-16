@@ -1,6 +1,6 @@
 # MLJ <> NaiveBayes.jl
 Repository implementing MLJ interface for 
-[NaiveBayes](https://github.com/JuliaStats/NaiveBayes.jl) models.
+[NaiveBayes](https://github.com/dfdx/NaiveBayes.jl) models.
 
 
 [![Build Status](https://github.com/alan-turing-institute/MLJNaiveBayesInterface.jl/workflows/CI/badge.svg)](https://github.com/alan-turing-institute/MLJNaiveBayesInterface.jl/actions)
