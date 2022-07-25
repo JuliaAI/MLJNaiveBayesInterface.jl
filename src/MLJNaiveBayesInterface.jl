@@ -189,8 +189,6 @@ The fields of `fitted_params(mach)` are:
 
 ```
 using MLJ
-using Distances
-using Test
 GaussianNB = @load GaussianNBClassifier pkg=NaiveBayes
 
 X, y = @load_iris
@@ -256,23 +254,11 @@ The fields of `fitted_params(mach)` are:
 
 ```
 using MLJ
-using Distances
-using Test
 GaussianNB = @load GaussianNBClassifier pkg=NaiveBayes
-
-X, y = @load_iris
-clf = GaussianNB(k=3)
-mach = machine(clf, X, y) |> fit!
-
-fitted_params(mach)
-
-preds = predict(mach, X);
-preds[1]
-predict_mode(mach, X)
 ```
 
 See also
-[`MultinomialNBClassifier`](@ref)
+[`GaussianNBClassifier`](@ref)
 """
 MultinomialNBClassifier
 
