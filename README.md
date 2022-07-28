@@ -1,5 +1,6 @@
-# MLJ <> NaiveBayes.jl
-Repository implementing MLJ interface for 
+# MLJNaiveBayesInterface.jl
+
+Repository implementing [MLJ](https://alan-turing-institute.github.io/MLJ.jl/dev/) interface for 
 [NaiveBayes](https://github.com/dfdx/NaiveBayes.jl) models.
 
 
