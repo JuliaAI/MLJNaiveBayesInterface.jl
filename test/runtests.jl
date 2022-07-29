@@ -16,7 +16,15 @@ X, y = @load_iris
 train, test = partition(eachindex(y), 0.6)
 
 fitresultG, cacheG, reportG = fit(gaussian_classifier, 1,
-                    selectrows(X, train), y[train]);
+                                  selectrows(X, train), y[train]);
+
+# test matrix is okay as input:
+fitresultGM, _ = fit(gaussian_classifier, 1,
+                     selectrows(MLJBase.matrix(X), train), y[train]);
+@test fitresultGM.gaussians == fitresultG.gaussians
+@test all([:c_counts, :gaussians, :n_obs]) do field
+    getproperty(fitresultG, field) ==  getproperty(fitresultGM, field)
+end
 
 params = fitted_params(gaussian_classifier, fitresultG)
 @test params.n_obs == length(train)
@@ -24,6 +32,12 @@ params = fitted_params(gaussian_classifier, fitresultG)
 gaussian_pred = predict(gaussian_classifier,
                         fitresultG,
                         selectrows(X, test));
+
+# test matrix is okay as input:
+gaussian_predM = predict(gaussian_classifier,
+                        fitresultG,
+                        selectrows(MLJBase.matrix(X), test));
+@test pdf(gaussian_predM, levels(y)) == pdf(gaussian_pred, levels(y))
 
 yhat1 = gaussian_pred[1]
 @test Set(classes(yhat1)) == Set(classes(y[1]))
@@ -103,10 +117,21 @@ multinomial_classifier = MultinomialNBClassifier()
 fitresultMLT, cacheMLT, reportMLT =
     MLJBase.fit(multinomial_classifier, 1, X, y)
 
+# test with matrix input:
+fitresultMLTM, _ =
+    MLJBase.fit(multinomial_classifier, 1, MLJBase.matrix(X), y)
+@test all([:c_counts, :n_obs, :x_counts, :x_totals]) do field
+    getproperty(fitresultMLTM, field) ==  getproperty(fitresultMLT, field)
+end
+
 params = fitted_params(multinomial_classifier, fitresultMLT)
 @test params.n_obs == length(y) + 3 * 2 # 3 features, 2 classes
 
 yhat = MLJBase.predict(multinomial_classifier, fitresultMLT, Xnew)
+
+# test with matrix input:
+yhatM = MLJBase.predict(multinomial_classifier, fitresultMLT, MLJBase.matrix(Xnew))
+@test pdf(yhat, levels(y)) == pdf(yhatM, levels(y))
 
 # see issue https://github.com/dfdx/NaiveBayes.jl/issues/42
 @test pdf(yhand[1], 'm') ≈ pdf(yhat[1], 'm')
