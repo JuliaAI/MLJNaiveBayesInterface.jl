@@ -50,7 +50,10 @@ end
 function MMI.predict(model::GaussianNBClassifier, fitresult, Xnew)
     Xmatrix = matrix(Xnew) |> permutedims
 
-    classes_observed, logprobs = NaiveBayes.predict_logprobs(fitresult, convert(Matrix{Float64}, Xmatrix))
+    classes_observed, logprobs = NaiveBayes.predict_logprobs(
+        fitresult,
+        convert(Matrix{Float64}, Xmatrix)
+    )
     # Note that NaiveBayes does not normalize the probabilities.
 
     # Normalize probabilities
@@ -86,7 +89,7 @@ function MMI.fit(model::MultinomialNBClassifier, verbosity::Int
     yplain = convert(Vector, y) # ordinary Vector
     classes_observed = unique(yplain)
 
-    res = NaiveBayes.MultinomialNB(classes_observed, p ,alpha= model.alpha)
+    res = NaiveBayes.MultinomialNB(classes_observed, p, alpha= model.alpha)
     fitresult = NaiveBayes.fit(res, convert(Matrix{Int}, Xmatrix), yplain)
 
     report = NamedTuple()
@@ -124,6 +127,7 @@ end
 
 MMI.load_path(::Type{<:GaussianNBClassifier}) =
     "$PKG.GaussianNBClassifier"
+MMI.human_name(::Type{<:GaussianNBClassifier}) = "Gaussian naive Bayes classifier"
 MMI.package_name(::Type{<:GaussianNBClassifier}) = "NaiveBayes"
 MMI.package_uuid(::Type{<:GaussianNBClassifier}) =
     "9bbee03b-0db5-5f46-924f-b5c9c21b8c60"
@@ -136,6 +140,7 @@ MMI.target_scitype(::Type{<:GaussianNBClassifier}) = AbstractVector{<:Finite}
 
 MMI.load_path(::Type{<:MultinomialNBClassifier}) =
     "$PKG.MultinomialNBClassifier"
+MMI.human_name(::Type{<:MultinomialNBClassifier}) = "multinomial naive Bayes classifier"
 MMI.package_name(::Type{<:MultinomialNBClassifier}) = "NaiveBayes"
 MMI.package_uuid(::Type{<:MultinomialNBClassifier}) =
     "9bbee03b-0db5-5f46-924f-b5c9c21b8c60"
@@ -149,10 +154,17 @@ MMI.target_scitype(::Type{<:MultinomialNBClassifier}) = AbstractVector{<:Finite}
 """
 $(MMI.doc_header(GaussianNBClassifier))
 
+Given each class taken on by the target variable `y`, it is supposed that the conditional
+probability distribution for the input variables `X` is a multivariate Gaussian. The mean
+and covariance of these Gaussian distributions are estimated using maximum likelihood, and a
+probability distribution for `y` given `X` is deduced by applying Bayes' rule. The required
+marginal for `y` is estimated using class frequency in the training data.
 
-`GaussianNBClassifier`: Gaussian Naive Bayes classifier. This is a classifier that models the
-data in each class `k` as samples drawn from a multivariate Gaussian distribution with mean
-`\\mu_k` and covariance `\\Sigma_k`. This model therefore considers the data as real-valued.
+**Important.** The name "naive Bayes classifier" is perhaps misleading. Since we are
+learning the full multivariate Gaussian distributions for `X` given `y`, we are not
+applying the usual naive Bayes independence condition, which would amount to forcing the
+covariance matrix to be diagonal.
+
 
 # Training data
 
@@ -160,21 +172,21 @@ In MLJ or MLJBase, bind an instance `model` to data with
 
     mach = machine(model, X, y)
 
-Where
+Here:
 
-- `X`: is any table of input features (eg, a `DataFrame`) whose columns
-  are of scitype `Continuous`; check the scitype with `schema(X)`
+- `X` is any table of input features (eg, a `DataFrame`) whose columns
+  are of scitype `Continuous`; check the column scitypes with `schema(X)`
 
-- `y`: is the target, which can be any `AbstractVector` whose element
+- `y` is the target, which can be any `AbstractVector` whose element
   scitype is `Finite`; check the scitype with `schema(y)`
 
 Train the machine using `fit!(mach, rows=...)`.
 
 # Operations
 
-- `predict(mach, Xnew)`: return predictions of the target given new
-  features `Xnew` having the same Scitype as `X` above. Predictions are probabilistic but
-  uncalibrated.
+- `predict(mach, Xnew)`: return predictions of the target given new features `Xnew`, which
+  should have the same scitype as `X` above. Predictions are probabilistic.
+
 - `predict_mode(mach, Xnew)`: Return the mode of above predictions.
 
 # Fitted parameters
@@ -182,14 +194,21 @@ Train the machine using `fit!(mach, rows=...)`.
 The fields of `fitted_params(mach)` are:
 
 - `c_counts`: A dictionary containing the observed count of each input class.
+
 - `c_stats`: A dictionary containing observed statistics on each input class. Each class is
   represented by a `DataStats` object, with the following fields:
+
     - `n_vars`: The number of variables used to describe the class's behavior.
+
     - `n_obs`: The number of times the class is observed.
+
     - `obs_axis`: The axis along which the observations were computed.
-- `gaussians`: A per class dictionary of gaussians, each representing the distribution of
-  the class. Represeanted with type Distributions.MvNormal.
-- `n_obs`: The total number of seen observations.
+
+- `gaussians`: A per class dictionary of Gaussians, each representing the distribution of
+  the class. Represented with type `Distributions.MvNormal` from the Distributions.jl
+  package.
+
+- `n_obs`: The total number of observations in the training data.
 
 # Examples
 
@@ -203,22 +222,27 @@ mach = machine(clf, X, y) |> fit!
 
 fitted_params(mach)
 
-preds = predict(mach, X);
+preds = predict(mach, X) # probabilistic predictions
 preds[1]
-predict_mode(mach, X)
+predict_mode(mach, X) # point predictions
 ```
 
 See also
 [`MultinomialNBClassifier`](@ref)
 """
 GaussianNBClassifier
+
 """
 $(MMI.doc_header(MultinomialNBClassifier))
 
+The [multinomial naive Bayes
+classifier](https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Multinomial_naive_Bayes) is
+often applied when input features consist of a counts (scitype `Count`) and when
+observations for a fixed target class are generated from a multinomial distribution with
+fixed probability vector, but whose sample length varies from observation to
+observation. For example, features might represent word counts in text documents being
+classified by sentiment.
 
-`MultinomialNBClassifier`: MultinomialNBClassifier Naive Bayes classifier.
-This is a classifier that models the data in each class `k` as samples drawn from a
-multinomial distribution. This model therefore considers data of scitype `Count`.
 
 # Training data
 
@@ -226,21 +250,28 @@ In MLJ or MLJBase, bind an instance `model` to data with
 
     mach = machine(model, X, y)
 
-Where
+Here:
 
-- `X`: is any table of input features (eg, a `DataFrame`) whose columns
-  are of scitype `Count`; check the scitype with `schema(X)`
+- `X` is any table of input features (eg, a `DataFrame`) whose columns are of scitype
+  `Count`; check the column scitypes with `schema(X)`.
 
-- `y`: is the target, which can be any `AbstractVector` whose element
-  scitype is `Finite`; check the scitype with `schema(y)`
+- `y` is the target, which can be any `AbstractVector` whose element scitype is `Finite`;
+  check the scitype with `schema(y)`.
 
 Train the machine using `fit!(mach, rows=...)`.
 
+
+# Hyper-parameters
+
+- `alpha=1`: Lindstone smoothing in estimation of multinomial probability vectors from
+  training histograms (default corresponds to Laplacian smoothing).
+
+
 # Operations
 
-- `predict(mach, Xnew)`: return predictions of the target given new
-  features `Xnew` having the same Scitype as `X` above. Predictions are probabilistic but
-  uncalibrated.
+- `predict(mach, Xnew)`: return predictions of the target given new features `Xnew`, which
+  should have the same scitype as `X` above.
+
 - `predict_mode(mach, Xnew)`: Return the mode of above predictions.
 
 # Fitted parameters
@@ -248,9 +279,12 @@ Train the machine using `fit!(mach, rows=...)`.
 The fields of `fitted_params(mach)` are:
 
 - `c_counts`: A dictionary containing the observed count of each input class.
+
 - `x_counts`: A dictionary containing the categorical counts of each input class.
+
 - `x_totals`: The sum of each count (input feature), ungrouped.
-- `n_obs`: The total number of seen observations.
+
+- `n_obs`: The total number of observations in the training data.
 
 # Examples
 
@@ -288,7 +322,7 @@ X = transform(mach1, tokenized_docs)
 y = coerce(sentiment, OrderedFactor)
 
 classifier = MultinomialNBClassifier()
-mach2 = machine(classifier, MLJ.table(X), y)
+mach2 = machine(classifier, X, y)
 fit!(mach2, rows=1:4)
 
 # probabilistic predictions:
