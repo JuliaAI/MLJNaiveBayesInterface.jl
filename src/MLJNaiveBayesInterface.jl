@@ -23,7 +23,7 @@ end
 function MMI.fit(model::GaussianNBClassifier, verbosity::Int
                 , X
                 , y)
-    Xmatrix = matrix(X) |> permutedims
+    Xmatrix = matrix(X)'
     p = size(Xmatrix, 1)
 
     yplain = convert(Vector, y) # y as Vector
@@ -48,7 +48,7 @@ function MMI.fitted_params(::GaussianNBClassifier, fitresult)
 end
 
 function MMI.predict(model::GaussianNBClassifier, fitresult, Xnew)
-    Xmatrix = matrix(Xnew) |> permutedims
+    Xmatrix = matrix(Xnew)'
 
     classes_observed, logprobs = NaiveBayes.predict_logprobs(
         fitresult,
