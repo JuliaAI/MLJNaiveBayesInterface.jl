@@ -13,13 +13,15 @@ NaiveBayes = "9bbee03b-0db5-5f46-924f-b5c9c21b8c60"
 DataAPI = "1.16.0"
 LogExpFunctions = "0.2, 0.3"
 MLJModelInterface = "0.3.5, 0.4, 1"
+MLJTestInterface = "0.2.9"
 NaiveBayes = "0.5, 0.6"
 julia = "1.10"
 
 [extras]
 MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
+MLJTestInterface = "72560011-54dd-4dc2-94f3-c5de45b75ecd"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["MLJBase", "StableRNGs", "Test"]
+test = ["MLJBase", "MLJTestInterface", "StableRNGs", "Test"]
