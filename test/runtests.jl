@@ -1,9 +1,47 @@
 using MLJNaiveBayesInterface
 using MLJBase
 using Test
-
+import MLJTestInterface
 import StableRNGs
-rng = StableRNGs.StableRNG(1234)
+rng = StableRNGs.StableRNG(12345)
+
+## Generic MLJ Interface tests
+
+# there's no generic interface tests for a model that needs `Count` inputs.
+@testset "generic interface tests" begin
+    @testset "GaussianNBClassifier" begin
+        for data in [
+            MLJTestInterface.make_binary(),
+            MLJTestInterface.make_multiclass(),
+            ]
+            failures, summary = MLJTestInterface.test(
+                [GaussianNBClassifier, ],
+                data...;
+                mod=@__MODULE__,
+                verbosity=0, # bump to debug
+                throw=false, # set to true to debug
+            )
+            @test isempty(failures)
+        end
+    end
+    @testset "MultinomialNBClassifier" begin
+        N = 200
+        red = rand(rng, UInt8, N)
+        blue = rand(rng, UInt8, N)
+        green = rand(rng, UInt8, N)
+        X = (red=red, blue=blue, green=green)
+        y = categorical(rand(rng, ['m', 'f'], N))
+        data = (X, y)
+        failures, summary = MLJTestInterface.test(
+            [MultinomialNBClassifier,],
+            data...;
+            mod=@__MODULE__,
+            verbosity=0, # bump to debug
+            throw=false, # set to true to debug
+        )
+        @test isempty(failures)
+    end
+end
 
 
 ## GAUSSIAN
@@ -21,16 +59,16 @@ fitresultG, cacheG, reportG = fit(gaussian_classifier, 1,
 # test matrix is okay as input:
 fitresultGM, _ = fit(gaussian_classifier, 1,
                      selectrows(MLJBase.matrix(X), train), y[train]);
-@test fitresultGM.gaussians == fitresultG.gaussians
+@test fitresultGM.core.gaussians == fitresultG.core.gaussians
 @test all([:c_counts, :gaussians, :n_obs]) do field
-    getproperty(fitresultG, field) ==  getproperty(fitresultGM, field)
+    getproperty(fitresultG.core, field) ==  getproperty(fitresultGM.core, field)
 end
 
-params = fitted_params(gaussian_classifier, fitresultG)
+params = fitted_params(gaussian_classifier, fitresultGM)
 @test params.n_obs == length(train)
 
 gaussian_pred = predict(gaussian_classifier,
-                        fitresultG,
+                        fitresultGM,
                         selectrows(X, test));
 
 # test matrix is okay as input:
@@ -121,7 +159,7 @@ fitresultMLT, cacheMLT, reportMLT =
 fitresultMLTM, _ =
     MLJBase.fit(multinomial_classifier, 1, MLJBase.matrix(X), y)
 @test all([:c_counts, :n_obs, :x_counts, :x_totals]) do field
-    getproperty(fitresultMLTM, field) ==  getproperty(fitresultMLT, field)
+    getproperty(fitresultMLTM.core, field) ==  getproperty(fitresultMLT.core, field)
 end
 
 params = fitted_params(multinomial_classifier, fitresultMLT)
