@@ -7,7 +7,7 @@ import MLJModelInterface
 import NaiveBayes
 import MLJModelInterface: Table, Continuous, Count, Finite, OrderedFactor,
     Multiclass
-
+import DataAPI
 const MMI = MLJModelInterface
 const PKG = "MLJNaiveBayesInterface"
 
@@ -26,13 +26,17 @@ function MMI.fit(model::GaussianNBClassifier, verbosity::Int
     Xmatrix = matrix(X) |> permutedims
     p = size(Xmatrix, 1)
 
-    yplain = convert(Vector, y) # y as Vector
-    classes_seen = unique(yplain)
+    y_plain = DataAPI.unwrap.(y)
+    classes_seen = unique(y_plain) # ordinary vector
+    class_pool = DataAPI.levels(y)         # CategoricalVector
 
     # initiates dictionaries keyed on classes_seen:
     res = NaiveBayes.GaussianNB(classes_seen, p)
 
-    fitresult = NaiveBayes.fit(res, convert(Matrix{Float64}, Xmatrix), yplain)
+    fitresult = (
+        ; core=NaiveBayes.fit(res, convert(Matrix{Float64}, Xmatrix), y_plain),
+        class_pool,
+    )
 
     report = NamedTuple{}()
 
@@ -41,20 +45,24 @@ function MMI.fit(model::GaussianNBClassifier, verbosity::Int
 end
 
 function MMI.fitted_params(::GaussianNBClassifier, fitresult)
-    return (c_counts=fitresult.c_counts,
-            c_stats=fitresult.c_stats,
-            gaussians=fitresult.gaussians,
-            n_obs=fitresult.n_obs)
+    return (
+        ; c_counts=fitresult.core.c_counts,
+        c_stats=fitresult.core.c_stats,
+        gaussians=fitresult.core.gaussians,
+        n_obs=fitresult.core.n_obs,
+        class_pool=fitresult.class_pool,
+    )
 end
 
 function MMI.predict(model::GaussianNBClassifier, fitresult, Xnew)
     Xmatrix = matrix(Xnew) |> permutedims
 
-    classes_observed, logprobs = NaiveBayes.predict_logprobs(
-        fitresult,
+    # Note that NaiveBayes does not normalize the probabilities.
+    classes_seen, logprobs = NaiveBayes.predict_logprobs(
+        fitresult.core,
         convert(Matrix{Float64}, Xmatrix)
     )
-    # Note that NaiveBayes does not normalize the probabilities.
+    class_pool = fitresult.class_pool
 
     # Normalize probabilities
     for p in (view(logprobs, :, i) for i in axes(logprobs, 2))
@@ -64,7 +72,7 @@ function MMI.predict(model::GaussianNBClassifier, fitresult, Xnew)
 
     # UnivariateFinite constructor automatically adds unobserved
     # classes with zero probability. Note we need to use adjoint here:
-    return MMI.UnivariateFinite(collect(classes_observed), probs')
+    return MMI.UnivariateFinite(collect(classes_seen), probs', pool=class_pool)
 end
 
 
@@ -86,11 +94,15 @@ function MMI.fit(model::MultinomialNBClassifier, verbosity::Int
     Xmatrix = matrix(X) |> permutedims
     p = size(Xmatrix, 1)
 
-    yplain = convert(Vector, y) # ordinary Vector
-    classes_observed = unique(yplain)
+    y_plain = DataAPI.unwrap.(y)
+    classes_seen = unique(y_plain) # ordinary vector
+    class_pool = DataAPI.levels(y)         # CategoricalVector
 
-    res = NaiveBayes.MultinomialNB(classes_observed, p, alpha= model.alpha)
-    fitresult = NaiveBayes.fit(res, convert(Matrix{Int}, Xmatrix), yplain)
+    res = NaiveBayes.MultinomialNB(classes_seen, p, alpha= model.alpha)
+    fitresult = (
+        ; core = NaiveBayes.fit(res, convert(Matrix{Int}, Xmatrix), y_plain),
+        class_pool,
+    )
 
     report = NamedTuple()
 
@@ -98,10 +110,13 @@ function MMI.fit(model::MultinomialNBClassifier, verbosity::Int
 end
 
 function MMI.fitted_params(::MultinomialNBClassifier, fitresult)
-    return (c_counts=fitresult.c_counts,
-            x_counts=fitresult.x_counts,
-            x_totals=fitresult.x_totals,
-            n_obs=fitresult.n_obs)
+    return (
+        ; c_counts=fitresult.core.c_counts,
+        x_counts=fitresult.core.x_counts,
+        x_totals=fitresult.core.x_totals,
+        n_obs=fitresult.core.n_obs,
+        class_pool=fitresult.class_pool,
+    )
 end
 
 function MMI.predict(model::MultinomialNBClassifier, fitresult, Xnew)
@@ -109,9 +124,10 @@ function MMI.predict(model::MultinomialNBClassifier, fitresult, Xnew)
 
     # Note that NaiveBayes.predict_logprobs returns probabilities that
     # are not normalized.
+    classes_seen, logprobs =
+        NaiveBayes.predict_logprobs(fitresult.core, convert(Matrix{Int}, Xmatrix))
 
-    classes_observed, logprobs =
-        NaiveBayes.predict_logprobs(fitresult, convert(Matrix{Int}, Xmatrix))
+    class_pool = fitresult.class_pool
 
     # Normalize probabilities
     for p in (view(logprobs, :, i) for i in axes(logprobs, 2))
@@ -119,7 +135,7 @@ function MMI.predict(model::MultinomialNBClassifier, fitresult, Xnew)
     end
     probs = logprobs
 
-    return MMI.UnivariateFinite(collect(classes_observed), probs')
+    return MMI.UnivariateFinite(collect(classes_seen), probs', pool=class_pool)
 end
 
 

@@ -21,16 +21,16 @@ fitresultG, cacheG, reportG = fit(gaussian_classifier, 1,
 # test matrix is okay as input:
 fitresultGM, _ = fit(gaussian_classifier, 1,
                      selectrows(MLJBase.matrix(X), train), y[train]);
-@test fitresultGM.gaussians == fitresultG.gaussians
+@test fitresultGM.core.gaussians == fitresultG.core.gaussians
 @test all([:c_counts, :gaussians, :n_obs]) do field
-    getproperty(fitresultG, field) ==  getproperty(fitresultGM, field)
+    getproperty(fitresultG.core, field) ==  getproperty(fitresultGM.core, field)
 end
 
-params = fitted_params(gaussian_classifier, fitresultG)
+params = fitted_params(gaussian_classifier, fitresultGM)
 @test params.n_obs == length(train)
 
 gaussian_pred = predict(gaussian_classifier,
-                        fitresultG,
+                        fitresultGM,
                         selectrows(X, test));
 
 # test matrix is okay as input:
@@ -121,7 +121,7 @@ fitresultMLT, cacheMLT, reportMLT =
 fitresultMLTM, _ =
     MLJBase.fit(multinomial_classifier, 1, MLJBase.matrix(X), y)
 @test all([:c_counts, :n_obs, :x_counts, :x_totals]) do field
-    getproperty(fitresultMLTM, field) ==  getproperty(fitresultMLT, field)
+    getproperty(fitresultMLTM.core, field) ==  getproperty(fitresultMLT.core, field)
 end
 
 params = fitted_params(multinomial_classifier, fitresultMLT)
@@ -136,3 +136,4 @@ yhatM = MLJBase.predict(multinomial_classifier, fitresultMLT, MLJBase.matrix(Xne
 # see issue https://github.com/dfdx/NaiveBayes.jl/issues/42
 @test pdf(yhand[1], 'm') ≈ pdf(yhat[1], 'm')
 @test pdf(yhand[1], 'f') ≈ pdf(yhat[1], 'f')
+
