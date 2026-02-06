@@ -44,7 +44,6 @@ rng = StableRNGs.StableRNG(12345)
 end
 
 
-
 ## GAUSSIAN
 
 gaussian_classifier = GaussianNBClassifier()
